@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Company News Digest</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.4; margin: 0; background: #fafafa; }
+    .wrap { max-width: 560px; margin: 48px auto; padding: 24px; background: #fff; border: 1px solid #eee; border-radius: 12px; }
+    h1 { margin: 0 0 8px 0; font-size: 22px; }
+    p { margin: 0 0 16px 0; color: #333; }
+    label { display: block; font-size: 13px; margin: 12px 0 6px; color: #111; }
+    input, select { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 14px; box-sizing: border-box; }
+    button { margin-top: 16px; width: 100%; padding: 12px 14px; border: 0; border-radius: 10px; font-size: 15px; cursor: pointer; }
+    .fine { font-size: 12px; color: #555; margin-top: 12px; }
+    .fine a { color: inherit; }
+    .hp { display: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Company News Digest</h1>
+    <p>Subscribe to receive curated company news.</p>
+
+    <form method="POST" action="https://mauriciorestrepofranco.app.n8n.cloud/webhook/newsletter/subscribe">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" required />
+
+      <label for="first_name">First name</label>
+      <input id="first_name" name="first_name" type="text" autocomplete="given-name" required />
+
+      <label for="last_name">Last name</label>
+      <input id="last_name" name="last_name" type="text" autocomplete="family-name" required />
+
+      <label for="frequency">Frequency</label>
+      <select id="frequency" name="frequency" required>
+        <option value="daily">Daily</option>
+        <option value="weekly_monday">Weekly (Mondays)</option>
+        <option value="monthly_1st">Monthly (1st)</option>
+      </select>
+
+      <input name="source" type="hidden" value="website" />
+
+      <!-- Honeypot: bots fill it, humans do not -->
+      <div class="hp">
+        <label for="hp">Leave this field empty</label>
+        <input id="hp" name="hp" type="text" value="" />
+      </div>
+
+      <button type="submit">Subscribe</button>
+
+      <div class="fine">
+        By subscribing, consent is provided to receive the newsletter and acceptance is provided of the
+        <a href="./privacy.html">Privacy Notice</a>.
+      </div>
+    </form>
+  </div>
+</body>
+</html>
