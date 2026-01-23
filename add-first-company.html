@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Add your first company | Company News Digest</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.4; margin: 0; background: #fafafa; }
+    .wrap { max-width: 680px; margin: 48px auto; padding: 24px; background: #fff; border: 1px solid #eee; border-radius: 12px; }
+    h1 { margin: 0 0 8px 0; font-size: 22px; }
+    p { margin: 0 0 16px 0; color: #333; }
+    label { display: block; font-size: 13px; margin: 12px 0 6px; color: #111; }
+    input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 14px; box-sizing: border-box; }
+    textarea { min-height: 84px; }
+    button { margin-top: 16px; width: 100%; padding: 12px 14px; border: 0; border-radius: 10px; font-size: 15px; cursor: pointer; }
+    .fine { font-size: 12px; color: #555; margin-top: 12px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .hidden { display: none; }
+    .alert { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: #f6f6f6; border: 1px solid #eee; font-size: 13px; color: #222; }
+    .muted { color: #666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Add your first company</h1>
+    <p>Select a company from the list, or request a new one.</p>
+
+    <div id="msg" class="alert hidden"></div>
+
+    <form id="form">
+      <input id="token" name="token" type="hidden" />
+
+      <label for="company_search">Company</label>
+      <input id="company_search" name="company_search" list="company_list" placeholder="Start typing a company name..." required />
+      <datalist id="company_list"></datalist>
+      <div class="muted">Tip: select from suggestions if it appears.</div>
+
+      <div id="new_company_block" class="hidden">
+        <p class="muted" style="margin-top:12px;">This company is not in the database. Provide details to request it.</p>
+
+        <label for="company_website">Company website (required)</label>
+        <input id="company_website" name="company_website" type="url" placeholder="https://example.com" />
+
+        <div class="row">
+          <div>
+            <label for="country">Country</label>
+            <select id="country" name="country"></select>
+          </div>
+          <div>
+            <label for="language">Language</label>
+            <input id="language" name="language" type="text" placeholder="en, es, pt, fr..." />
+          </div>
+        </div>
+
+        <label for="query_terms">Query terms</label>
+        <textarea id="query_terms" name="query_terms" placeholder="Example: CompanyName OR BrandName OR FounderName"></textarea>
+
+        <label for="exclude_terms">Exclude terms (optional)</label>
+        <textarea id="exclude_terms" name="exclude_terms" placeholder="Example: careers, jobs, coupon"></textarea>
+      </div>
+
+      <button type="submit">Continue</button>
+
+      <div class="fine">
+        This will save your preferences and take you to your subscriptions page.
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const BASE = "https://mauriciorestrepofranco.app.n8n.cloud/webhook";
+    const ENDPOINT_BOOTSTRAP = BASE + "/newsletter/bootstrap";
+    const ENDPOINT_FIRST = BASE + "/newsletter/first-company";
+
+    function qs(name) {
+      return new URLSearchParams(window.location.search).get(name) || "";
+    }
+
+    function showMsg(text) {
+      const el = document.getElementById("msg");
+      el.textContent = text;
+      el.classList.remove("hidden");
+    }
+
+    const token = qs("token");
+    document.getElementById("token").value = token;
+
+    if (!token) {
+      showMsg("Missing token. Please use the link from your email.");
+    }
+
+    let companies = [];
+    let companyNameSet = new Set();
+
+    async function loadBootstrap() {
+      const res = await fetch(ENDPOINT_BOOTSTRAP + "?token=" + encodeURIComponent(token));
+      if (!res.ok) {
+        showMsg("Could not load companies. Please try again later.");
+        return;
+      }
+      const data = await res.json();
+
+      companies = data.companies || [];
+      const countries = data.countries || [];
+
+      const dl = document.getElementById("company_list");
+      dl.innerHTML = "";
+      companyNameSet = new Set();
+      for (const c of companies) {
+        if (c.company_name) {
+          const opt = document.createElement("option");
+          opt.value = c.company_name;
+          dl.appendChild(opt);
+          companyNameSet.add(c.company_name.toLowerCase());
+        }
+      }
+
+      const countrySel = document.getElementById("country");
+      countrySel.innerHTML = "";
+      for (const name of countries) {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        countrySel.appendChild(opt);
+      }
+    }
+
+    const search = document.getElementById("company_search");
+    const newBlock = document.getElementById("new_company_block");
+    const website = document.getElementById("company_website");
+
+    function toggleNewCompanyBlock() {
+      const v = (search.value || "").trim().toLowerCase();
+      const exists = companyNameSet.has(v);
+      if (exists || !v) {
+        newBlock.classList.add("hidden");
+        website.removeAttribute("required");
+      } else {
+        newBlock.classList.remove("hidden");
+        website.setAttribute("required", "required");
+      }
+    }
+
+    search.addEventListener("input", toggleNewCompanyBlock);
+    search.addEventListener("change", toggleNewCompanyBlock);
+
+    document.getElementById("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!token) return;
+
+      const payload = {
+        token,
+        company_name: (search.value || "").trim(),
+        company_website: (document.getElementById("company_website").value || "").trim(),
+        country: (document.getElementById("country").value || "").trim(),
+        language: (document.getElementById("language").value || "").trim(),
+        query_terms: (document.getElementById("query_terms").value || "").trim(),
+        exclude_terms: (document.getElementById("exclude_terms").value || "").trim()
+      };
+
+      const res = await fetch(ENDPOINT_FIRST, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        showMsg("Could not save your company. Please try again.");
+        return;
+      }
+
+      window.location.href = "manage.html?token=" + encodeURIComponent(token);
+    });
+
+    loadBootstrap();
+  </script>
+</body>
+</html>
